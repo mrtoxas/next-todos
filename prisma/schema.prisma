@@ -1,0 +1,58 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String @unique
+  email         String
+  firstName     String
+  lastName      String?
+  avatar        String?
+  ownTasks      Task[] @relation("OwnTask")
+  taskIDs       String[] @db.ObjectId
+  sharedTasks   Task[] @relation("SharedTask", fields: [taskIDs], references: [id])
+  requestedBy   Friends[] @relation("requestedBy")
+  requestedTo   Friends[] @relation("requestedTo")
+}
+
+model Friends {
+  id                  String @id @default(auto()) @map("_id") @db.ObjectId
+  requestedByUser     User @relation("requestedBy", fields: [requestedByUserId], references: [id])
+  requestedByUserId   String @db.ObjectId
+  requestedToUser     User @relation("requestedTo", fields: [requestedToUserId], references: [id])
+  requestedToUserId   String @db.ObjectId
+  status              FriendStatus @default(PENDING)
+}
+
+model Task {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  owner     User @relation("OwnTask", fields: [ownerId], references: [id])
+  ownerId   String
+  userIDs   String[] @db.ObjectId
+  users     User[] @relation("SharedTask", fields: [userIDs], references: [id])
+  status    TaskStatus @default(PENDING)
+}
+
+enum TaskStatus {
+  PENDING
+  PROGRESS
+  COMPLETED
+  REJECTED
+  DELETED
+}
+
+enum FriendStatus {
+  PENDING
+  REJECTED
+  CONFIRMED
+}
